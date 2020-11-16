@@ -5,7 +5,8 @@
 #include <SparkFunCCS811.h>
 #include <DHT.h>
 #include <Adafruit_NeoPixel.h>
-#include <LiquidCrystal_PCF8574.h>
+#include <LiquidCrystal_I2C.h>
+#include "customChars.h"
 
 #define LED D0
 #define PM_SERIAL_RX D7
@@ -22,7 +23,7 @@ float temperature, humidity;
 float pm25, pm10;
 uint16_t co2, voc;
 Adafruit_NeoPixel leds = Adafruit_NeoPixel(NUM_LEDS, D4, NEO_GRB + NEO_KHZ800);
-LiquidCrystal_PCF8574 lcd(0x27);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void setup() {
   Serial.begin(115200);
@@ -50,16 +51,17 @@ void setup() {
   Wire.beginTransmission(0x27);
   int error = Wire.endTransmission();
   if (error == 0) {
-    lcd.begin(16, 2);
     Serial.println(": LCD found.");
+    lcd.init();                      // initialize the lcd 
+    lcd.backlight();
+    lcd.createChar(0, lowParticle);
+    lcd.home();
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("ESP started...");
   } else {
     Serial.println(": LCD not found.");
   }
-  lcd.setBacklight(255);
-  lcd.home();
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("ESP started...");
   delay(800);
   Serial.println("Initializing SDS011 particle sensor...");
   sds.begin();
@@ -122,7 +124,7 @@ void loop() {
   lcd.home();
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("PM2,5: ");
+  lcd.write(0);
   lcd.print(pm25);
   lcd.print(" PM10: ");
   lcd.print(pm10);
