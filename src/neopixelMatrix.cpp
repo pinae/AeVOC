@@ -7,11 +7,12 @@ uint16_t pmValCount = 0;
 uint16_t co2ValCount = 0;
 
 void shiftPmMeasurements(float pm) {
-    for (uint8_t i = 55; i >= 0; i--) {
-        pmMatrix[i+8] = pmMatrix[i];
+    uint8_t i;
+    for (i = 7*8+7; i >= 8; i--) {
+        pmMatrix[i] = pmMatrix[i-8];
     }
     pmValCount = 1;
-    for (uint8_t i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++) {
         if (round(pm * 8.0f) > i) {
             pmMatrix[i] = 1.0f;
         } else {
@@ -30,8 +31,9 @@ void addPmMeasurement(float pm) {
 }
 
 void shiftCO2Measurements(float co2) {
-    for (uint8_t i = 55; i >= 0; i--) {
-        co2Matrix[i+8] = co2Matrix[i];
+    uint8_t i;
+    for (i = 7*8+7; i >= 8; i--) {
+        co2Matrix[i] = co2Matrix[i-8];
     }
     co2ValCount = 1;
     for (uint8_t i = 0; i < 8; i++) {
@@ -63,8 +65,8 @@ void displayMatrix() {
     }
     for (uint8_t i = 0; i < 64; i++) {
         leds.setPixelColor(i, leds.Color(
-            (uint8_t) round(pmMatrix[i]*(1.0f-pmSeverity/8.0f)*255), 
             (uint8_t) round(pmMatrix[i]*(pmSeverity/8.0f)*255), 
+            (uint8_t) round(pmMatrix[i]*(1.0f-pmSeverity/8.0f)*255), 
             (uint8_t) round(co2Matrix[i]*255)));
     }
     leds.show();

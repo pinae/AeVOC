@@ -31,6 +31,7 @@ float pm25, pm10;
 uint16_t co2, voc;
 Adafruit_NeoPixel leds = Adafruit_NeoPixel(NUM_LEDS, D4, NEO_GRB + NEO_KHZ800);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+unsigned long lastShift = 0;
 
 void scanI2C() {
   Serial.println("Scanning for i2c devices...");
@@ -127,16 +128,21 @@ void setup() {
   Serial.print("CCS811.begin() exited with: ");
   Serial.println(ccs.statusString(returnCode));
   leds.begin();
-  leds.setBrightness(25);
+  leds.setBrightness(255);
   for (int i = 0; i < NUM_LEDS; i++) {
     leds.setPixelColor(i, leds.Color(0, 0, 0));
   }
   leds.show();
+  Serial.println("Clearing Measurements...");
+  shiftCO2Measurements(0.0f);
+  shiftPmMeasurements(0.0f);
   Serial.println("Setup complete.");
+  lastShift = millis();
 }
 
 void loop() {
-  Serial.println("Starting loop...");
+  Serial.println("---------------------------");
+  unsigned long now = millis();
   temperature = dht.readTemperature(false);
   humidity = dht.readHumidity();
   if (isnan(humidity) || isnan(temperature)) {
@@ -158,6 +164,13 @@ void loop() {
     Serial.print(pm25);
     Serial.print(", PM10 = ");
     Serial.println(pm10);
+    float normedPm25 = ((float) pm25 - 4.0f) / 5.0f;
+    float normedPm10 = ((float) pm10 - 7.0f) / 10.0f;
+    float normedPm = normedPm25;
+    if (normedPm10 > normedPm) normedPm = normedPm10;
+    if (normedPm < 0.0f) normedPm = 0.0f;
+    if (normedPm > 1.0f) normedPm = 1.0f;
+    addPmMeasurement(normedPm);
   } else {
     Serial.print("Could not read values from sensor, reason: ");
     Serial.println(pm.statusToString());
@@ -170,19 +183,28 @@ void loop() {
     Serial.print(co2);
     Serial.print(" tVOC = ");
     Serial.println(voc);
+    float normedCO2 = ((float) co2 - 400.0f) / 400.0f;
+    if (normedCO2 < 0.0f) normedCO2 = 0.0f;
+    if (normedCO2 > 1.0f) normedCO2 = 1.0f;
+    if (co2 > 350 && co2 < 5000) 
+      addCO2Measurement(normedCO2);
+  }
+  if ((now - lastShift) > (4* 60 * 1000)) {
+    float normedPm25 = ((float) pm25 - 4.0f) / 5.0f;
+    float normedPm10 = ((float) pm10 - 7.0f) / 10.0f;
+    float normedPm = normedPm25;
+    if (normedPm10 > normedPm) normedPm = normedPm10;
+    if (normedPm < 0.0f) normedPm = 0.0f;
+    if (normedPm > 1.0f) normedPm = 1.0f;
+    shiftPmMeasurements(normedPm);
+    float normedCO2 = ((float) co2 - 400.0f) / 400.0f;
+    if (normedCO2 < 0.0f) normedCO2 = 0.0f;
+    if (normedCO2 > 1.0f) normedCO2 = 1.0f;
+    shiftCO2Measurements(normedCO2);
+    lastShift = now;
   }
   displayMeasurements(pm25, pm10, co2, voc, temperature, humidity);
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds.setPixelColor(i, leds.Color(0, 0, 255));
-    leds.show(); 
-    delay(500/NUM_LEDS);
-  }
-  digitalWrite(LED, LOW);
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds.setPixelColor(i, leds.Color(255, 255, 255));
-    leds.show(); 
-    delay(100/NUM_LEDS);
-  }
-  delay(400);
+  displayMatrix();
+  delay(1000);
   digitalWrite(LED, HIGH);
 }
