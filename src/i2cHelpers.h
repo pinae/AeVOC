@@ -1,0 +1,1 @@
+void scanI2C();
