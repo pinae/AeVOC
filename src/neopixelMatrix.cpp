@@ -2,9 +2,33 @@
 
 extern Adafruit_NeoPixel leds;
 float pmMatrix[64] = {0.0f};
-float co2Matrix[64] = {0.0f};
+float vocMatrix[64] = {0.0f};
 uint16_t pmValCount = 0;
-uint16_t co2ValCount = 0;
+uint16_t vocValCount = 0;
+
+float normValue(float val, float minVal, float maxVal) {
+    float normedVal = (val - minVal) / (maxVal - minVal);
+    if (normedVal < 0.0f) normedVal = 0.0f;
+    if (normedVal > 1.0f) normedVal = 1.0f;
+    return normedVal;
+}
+
+bool sanityCheck(float val, float minVal, float maxVal) {
+    if (val < minVal) return false;
+    if (val > maxVal) return false;
+    return true;
+}
+
+bool sanityCheck(uint16_t val, uint16_t minVal, uint16_t maxVal) {
+    if (val < minVal) return false;
+    if (val > maxVal) return false;
+    return true;
+}
+
+float maxOf(float a, float b) {
+    if (b > a) return b;
+    return a;
+}
 
 void shiftPmMeasurements(float pm) {
     uint8_t i;
@@ -30,27 +54,27 @@ void addPmMeasurement(float pm) {
     }
 }
 
-void shiftCO2Measurements(float co2) {
+void shiftVocMeasurements(float voc) {
     uint8_t i;
     for (i = 7*8+7; i >= 8; i--) {
-        co2Matrix[i] = co2Matrix[i-8];
+        vocMatrix[i] = vocMatrix[i-8];
     }
-    co2ValCount = 1;
+    vocValCount = 1;
     for (uint8_t i = 0; i < 8; i++) {
-        if (round(co2 * 8.0f) > i) {
-            co2Matrix[i] = 1.0f;
+        if (round(voc * 8.0f) > i) {
+            vocMatrix[i] = 1.0f;
         } else {
-            co2Matrix[i] = 0.0f;
+            vocMatrix[i] = 0.0f;
         }
     }
 }
 
-void addCO2Measurement(float co2) {
-    co2ValCount++;
+void addVocMeasurement(float voc) {
+    vocValCount++;
     for (uint8_t i = 0; i < 8; i++) {
-        float measFrac = 1.0f/((float) co2ValCount);
-        co2Matrix[i] = (1.0f-measFrac) * co2Matrix[i];
-        if (round(co2 * 8.0f) > i) co2Matrix[i] += measFrac;
+        float measFrac = 1.0f/((float) vocValCount);
+        vocMatrix[i] = (1.0f-measFrac) * vocMatrix[i];
+        if (round(voc * 8.0f) > i) vocMatrix[i] += measFrac;
     }
 }
 
@@ -67,7 +91,7 @@ void displayMatrix() {
         leds.setPixelColor(i, leds.Color(
             (uint8_t) round(pmMatrix[i]*(pmSeverity/8.0f)*255), 
             (uint8_t) round(pmMatrix[i]*(1.0f-pmSeverity/8.0f)*255), 
-            (uint8_t) round(co2Matrix[i]*255)));
+            (uint8_t) round(vocMatrix[i]*255)));
     }
     leds.show();
 }

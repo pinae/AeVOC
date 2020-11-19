@@ -25,8 +25,8 @@ void displayMeasurements(float pm25, float pm10,
   drawBarDiagram(24, pm10, 7.0f, 50.0f);
   display.printf("CO2: %u ppm\n", co2);
   drawBarDiagram(32, (float) co2, 400.0f, 1500.0f);
-  display.printf("VOC: %u\n", voc);
-  drawBarDiagram(38, (float) voc, 0.0f, 2000.0f);
+  display.printf("VOC: %u ppb\n", voc);
+  drawBarDiagram(38, (float) voc, 0.0f, 1500.0f);
   display.printf("%2.1f\n", temperature);
   display.drawCircle(26, 49, 1, WHITE);
   display.drawChar(29, 48, 'C', WHITE, BLACK, 1);

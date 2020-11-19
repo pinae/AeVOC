@@ -1,0 +1,1 @@
+int strToInt(char* str);

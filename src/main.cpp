@@ -12,8 +12,9 @@
 #include "i2cHelpers.h"
 #include "neopixelMatrix.h"
 #include "oledFunctions.h"
+#include "configHelpers.h"
+#include "mqtt.h"
 
-#define LED D0
 #define PM_SERIAL_RX D7
 #define PM_SERIAL_TX D8
 #define I2C_PIN_SCL D5
@@ -25,6 +26,7 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET     0
+#define CONFIG_VERSION "v0.2"
 
 SdsDustSensor sds(PM_SERIAL_RX, PM_SERIAL_TX);
 CCS811 ccs(CCS811_ADDR);
@@ -35,11 +37,19 @@ uint16_t co2, voc;
 Adafruit_NeoPixel leds = Adafruit_NeoPixel(NUM_LEDS, D4, NEO_GRB + NEO_KHZ800);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 unsigned long lastShift = 0;
+unsigned long lastMeasurement = 0;
+DNSServer dnsServer;
+WebServer server(80);
+const char wifiInitialApPassword[] = "loving_ct";
+DeviceName devName;
+IotWebConf iotWebConf(devName.get(), &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
+uint8_t matrixBrightness = 255;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(LED, OUTPUT);
   while(!Serial) {}  // Wait for Serial to start
+  devName.print();
+  initWifiAP();
   Serial.println("Initializing i2c...");
   Wire.begin(I2C_PIN_SDA, I2C_PIN_SCL);
   Wire.setClockStretchLimit(500);
@@ -66,34 +76,39 @@ void setup() {
   ccs.setDriveMode(1); // Measure every second.
   ccs.setEnvironmentalData(humidity, temperature);
   leds.begin();
-  leds.setBrightness(255);
+  leds.setBrightness(matrixBrightness);
   for (int i = 0; i < NUM_LEDS; i++) {
     leds.setPixelColor(i, leds.Color(0, 0, 0));
   }
   leds.show();
   Serial.println("Clearing Measurements...");
-  shiftCO2Measurements(0.0f);
+  shiftVocMeasurements(0.0f);
   shiftPmMeasurements(0.0f);
   Serial.println("Setup complete.");
-  lastShift = millis();
+  unsigned long now = millis();
+  lastShift = now;
+  lastMeasurement = now;
 }
 
-void loop() {
+void measure() {
   Serial.println("---------------------------");
-  unsigned long now = millis();
   temperature = dht.readTemperature(false);
   humidity = dht.readHumidity();
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println(F("Failed to read from DHT sensor!"));
+  } else {
+    char* temperatureStr = (char*) malloc(50);
+    sprintf(temperatureStr, "%2.1f", temperature);
+    publishToMqtt("temperature", temperatureStr);
+    free(temperatureStr);
+    char* humidityStr = (char*) malloc(50);
+    sprintf(humidityStr, "%2.1f", humidity);
+    publishToMqtt("humidity", humidityStr);
+    free(humidityStr);
   }
   float hic = dht.computeHeatIndex(temperature, humidity, false);
-  Serial.print(F("Temperature: "));
-  Serial.print(temperature);
-  Serial.print(F("°C  Humidity: "));
-  Serial.print(humidity);
-  Serial.print(F("% Heat index: "));
-  Serial.print(hic);
-  Serial.println(F("°C"));
+  Serial.printf("Temperature: %2.1f°C  Humidity: %2.1f%%  Heat index: %2.1f°C\n", 
+                temperature, humidity, hic);
   ccs.setEnvironmentalData(humidity, temperature);
   PmResult pm = sds.readPm();
   if (pm.isOk()) {
@@ -103,13 +118,13 @@ void loop() {
     Serial.print(pm25);
     Serial.print(", PM10 = ");
     Serial.println(pm10);
-    float normedPm25 = ((float) pm25 - 4.0f) / 21.0f;
-    float normedPm10 = ((float) pm10 - 7.0f) / 43.0f;
-    float normedPm = normedPm25;
-    if (normedPm10 > normedPm) normedPm = normedPm10;
-    if (normedPm < 0.0f) normedPm = 0.0f;
-    if (normedPm > 1.0f) normedPm = 1.0f;
-    addPmMeasurement(normedPm);
+    addPmMeasurement(maxOf(
+      normValue((float) pm25, 3.5f, 25.0f), 
+      normValue((float) pm10, 6.5f, 50.0f)));
+    char* pmJson = (char*) malloc(80);
+    sprintf(pmJson, "{\"pm2,5\": %2.2f, \"pm10\": %2.2f}", pm25, pm10);
+    publishToMqtt("particles_and_aerosoles", pmJson);
+    free(pmJson);
   } else {
     Serial.print("Could not read values from sensor, reason: ");
     Serial.println(pm.statusToString());
@@ -117,34 +132,37 @@ void loop() {
   if (ccs.dataAvailable()) {
     ccs.readAlgorithmResults();
     Serial.printf("CCS baseline: %u\n", ccs.getBaseline());
-    co2 = ccs.getCO2();
-    voc = ccs.getTVOC();
-    Serial.print("CO2 = ");
-    Serial.print(co2);
-    Serial.print(" tVOC = ");
-    Serial.println(voc);
-    float normedCO2 = ((float) co2 - 400.0f) / 1100.0f;
-    if (normedCO2 < 0.0f) normedCO2 = 0.0f;
-    if (normedCO2 > 1.0f) normedCO2 = 1.0f;
-    if (co2 > 350 && co2 < 5000) 
-      addCO2Measurement(normedCO2);
+    uint16_t newCo2 = ccs.getCO2();
+    uint16_t newVoc = ccs.getTVOC();
+    Serial.printf("tVOC = %u    CO2 (projection) = %u\n", newVoc, newCo2);
+    if (sanityCheck(newCo2, 400, 5000)) co2 = newCo2;
+    if (sanityCheck(newVoc, 0, 4000)) {
+      voc = newVoc;
+      addVocMeasurement(normValue((float) voc, 0.0f, 815.0f));
+    }
+    char* vocJson = (char*) malloc(80);
+    sprintf(vocJson, "{\"tVOC\": %u, \"CO2\": %u}", newVoc, newCo2);
+    publishToMqtt("voc", vocJson);
+    free(vocJson);
   }
-  if ((now - lastShift) > (3 * 60 * 1000)) {
-    float normedPm25 = ((float) pm25 - 4.0f) / 21.0f;
-    float normedPm10 = ((float) pm10 - 7.0f) / 43.0f;
-    float normedPm = normedPm25;
-    if (normedPm10 > normedPm) normedPm = normedPm10;
-    if (normedPm < 0.0f) normedPm = 0.0f;
-    if (normedPm > 1.0f) normedPm = 1.0f;
-    shiftPmMeasurements(normedPm);
-    float normedCO2 = ((float) co2 - 400.0f) / 1100.0f;
-    if (normedCO2 < 0.0f) normedCO2 = 0.0f;
-    if (normedCO2 > 1.0f) normedCO2 = 1.0f;
-    shiftCO2Measurements(normedCO2);
-    lastShift = now;
+}
+
+void loop() {
+  unsigned long now = millis();
+  iotWebConf.doLoop();
+  loopWifiChecks();
+  if ((now - lastMeasurement) > 1000) {
+    measure();
+    if ((now - lastShift) > (3 * 60 * 1000)) {
+      shiftPmMeasurements(maxOf(
+        normValue((float) pm25, 3.5f, 25.0f), 
+        normValue((float) pm10, 6.5f, 50.0f)));
+      shiftVocMeasurements(normValue((float) voc, 0.0f, 815.0f));
+      lastShift = now;
+    }
+    displayMeasurements(pm25, pm10, co2, voc, temperature, humidity);
+    leds.setBrightness(matrixBrightness);
+    displayMatrix();
+    lastMeasurement = now;
   }
-  displayMeasurements(pm25, pm10, co2, voc, temperature, humidity);
-  displayMatrix();
-  delay(1000);
-  digitalWrite(LED, HIGH);
 }
