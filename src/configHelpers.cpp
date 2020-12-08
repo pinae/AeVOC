@@ -69,8 +69,7 @@ void initWifiAP() {
     iotWebConf.setWifiConnectionCallback(&wifiConnected);
     iotWebConf.setupUpdateServer(&httpUpdater);
     boolean validConfig = iotWebConf.init();
-    if (!validConfig)
-    {
+    if (!validConfig) {
         mqttServerValue[0] = '\0';
         mqttUserNameValue[0] = '\0';
         mqttUserPasswordValue[0] = '\0';
@@ -99,6 +98,7 @@ char* getMqttPassword() {
 }
 
 void setMatrixBrightness(char* payload) {
+    Serial.printf("Setting the brightness of the LED matrix to %s.\n", payload);
     matrixBrightness = strToInt(payload);
 }
 

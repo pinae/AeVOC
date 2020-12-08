@@ -43,7 +43,7 @@ WebServer server(80);
 const char wifiInitialApPassword[] = "loving_ct";
 DeviceName devName;
 IotWebConf iotWebConf(devName.get(), &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
-uint8_t matrixBrightness = 255;
+uint8_t matrixBrightness = 50;
 
 void setup() {
   Serial.begin(115200);
@@ -119,8 +119,8 @@ void measure() {
     Serial.print(", PM10 = ");
     Serial.println(pm10);
     addPmMeasurement(maxOf(
-      normValue((float) pm25, 3.5f, 25.0f), 
-      normValue((float) pm10, 6.5f, 50.0f)));
+      normValue((float) pm25, PM25_MINIMUM, PM25_EXTREME), 
+      normValue((float) pm10, PM10_MINIMUM, PM10_EXTREME)));
     char* pmJson = (char*) malloc(80);
     sprintf(pmJson, "{\"pm2,5\": %2.2f, \"pm10\": %2.2f}", pm25, pm10);
     publishToMqtt("particles_and_aerosoles", pmJson);
@@ -138,7 +138,7 @@ void measure() {
     if (sanityCheck(newCo2, 400, 5000)) co2 = newCo2;
     if (sanityCheck(newVoc, 0, 4000)) {
       voc = newVoc;
-      addVocMeasurement(normValue((float) voc, 0.0f, 815.0f));
+      addVocMeasurement(normValue((float) voc, VOC_MINIMUM, VOC_EXTREME));
     }
     char* vocJson = (char*) malloc(80);
     sprintf(vocJson, "{\"tVOC\": %u, \"CO2\": %u}", newVoc, newCo2);
@@ -155,9 +155,9 @@ void loop() {
     measure();
     if ((now - lastShift) > (3 * 60 * 1000)) {
       shiftPmMeasurements(maxOf(
-        normValue((float) pm25, 3.5f, 25.0f), 
-        normValue((float) pm10, 6.5f, 50.0f)));
-      shiftVocMeasurements(normValue((float) voc, 0.0f, 815.0f));
+        normValue((float) pm25, PM25_MINIMUM, PM25_EXTREME), 
+        normValue((float) pm10, PM10_MINIMUM, PM10_EXTREME)));
+      shiftVocMeasurements(normValue((float) voc, VOC_MINIMUM, VOC_EXTREME));
       lastShift = now;
     }
     displayMeasurements(pm25, pm10, co2, voc, temperature, humidity);
