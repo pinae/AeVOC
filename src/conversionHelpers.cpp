@@ -3,11 +3,11 @@
 int strToInt(char* str) {
     char** conversionErrorPos = 0;
     int convertedNumber = strtoul(str, conversionErrorPos, 10);
-    Serial.printf("Converting \"%s\" to %d.\n", str, convertedNumber);
+    //Serial.printf("Converting \"%s\" to %d.\n", str, convertedNumber);
     if (conversionErrorPos == 0) {
         return convertedNumber;
     } else {
-        Serial.print("Error converting char* to number: "); Serial.println(str);
+        Serial.printf("Error converting char* to number: %s\n", str);
     }
     return -1;
 }

@@ -42,8 +42,8 @@ void DeviceName::print() {
     byte mac[6]; WiFi.macAddress(mac);
     char macStr[18];
     sprintf(&macStr[0], "%x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    Serial.printf("MAC:\t\t%s\n", macStr);
-    Serial.printf("Device Name:\t%s\n", deviceName);
+    /*Serial.printf("MAC:\t\t%s\n", macStr);
+    Serial.printf("Device Name:\t%s\n", deviceName);*/
 }
 
 char* DeviceName::get() {
@@ -55,12 +55,12 @@ void wifiConnected() {
 }
 
 void configSaved() {
-    Serial.println("Configuration was updated.");
+    //Serial.println("Configuration was updated.");
     needReset = true;
 }
 
 void initWifiAP() {
-    Serial.println("Initializing WiFi...");
+    //Serial.println("Initializing WiFi...");
     iotWebConf.addParameter(&mqttServerParam);
     iotWebConf.addParameter(&mqttPortParam);
     iotWebConf.addParameter(&mqttUserNameParam);
@@ -98,7 +98,7 @@ char* getMqttPassword() {
 }
 
 void setMatrixBrightness(char* payload) {
-    Serial.printf("Setting the brightness of the LED matrix to %s.\n", payload);
+    //Serial.printf("Setting the brightness of the LED matrix to %s.\n", payload);
     matrixBrightness = strToInt(payload);
 }
 

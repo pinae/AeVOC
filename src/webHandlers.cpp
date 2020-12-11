@@ -5,7 +5,7 @@ extern WebServer server;
 extern IotWebConf iotWebConf;
 
 void handleRoot() {
-  Serial.println("Request to /");
+  //Serial.println("Request to /");
   // -- Let IotWebConf test and handle captive portal requests.
   if (iotWebConf.handleCaptivePortal())
   {

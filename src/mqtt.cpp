@@ -20,18 +20,18 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     char* plStr = (char*) calloc(length+1, sizeof(char));
     strncpy(&plStr[0], (char*) payload, length);
     *(plStr + length) = 0;
-    Serial.printf("MQTT: %s (len: %d) - Payload: %s\n", 
-                  topic, length, plStr);
+    /*Serial.printf("MQTT: %s (len: %d) - Payload: %s\n", 
+                  topic, length, plStr);*/
     subscribedMqttTopicList* stl = subscribedTopicsList;
     while(stl != NULL) {
         if (strcmp(stl->entry->topic, topic) == 0) {
-            Serial.printf("Found topic: %s\n", stl->entry->topic);
+            //Serial.printf("Found topic: %s\n", stl->entry->topic);
             stl->entry->callback(plStr);
             break;
         }
         stl = (*stl).next;
     }
-    Serial.println("-----------------");
+    //Serial.println("-----------------");
     free(plStr);
 }
 
@@ -56,25 +56,26 @@ void subscribeToTopic(const char* topic, void (*callback)(char*)) {
     newTopicListElem->entry = newTopic;
     newTopicListElem->next = subscribedTopicsList;
     subscribedTopicsList = newTopicListElem;
-    Serial.print("Subscribed to MQTT-topic: "); Serial.println(fullTopicStr);
+    //Serial.print("Subscribed to MQTT-topic: "); Serial.println(fullTopicStr);
 }
 
 void connectToMqtt(void (*subscriptionCallback)()) {
     boolean successfullyConnected = false;
     while (!mqttClient.connected()) {
-        Serial.print("Attempting MQTT connection... ");
+        //Serial.print("Attempting MQTT connection... ");
         if (strlen(getMqttUsername()) > 0 && strlen(getMqttPassword())) {
-            Serial.printf("\nMQTT: Using credentials: %s PW: %s\n", 
-                          getMqttUsername(), getMqttPassword());
+            /*Serial.printf("\nMQTT: Using credentials: %s PW: %s\n", 
+                          getMqttUsername(), getMqttPassword());*/
             successfullyConnected = mqttClient.connect(
                 devName.get(), getMqttUsername(), getMqttPassword());
         } else {
             successfullyConnected = mqttClient.connect(devName.get());
         }
         if (successfullyConnected) {
-            Serial.println("connected!");
+            //Serial.println("connected!");
             subscriptionCallback();
         } else {
+            Serial.print("MQTT connection ");
             Serial.print("failed, rc=");
             Serial.print(mqttClient.state());
             Serial.println(" try again in 2 seconds");
