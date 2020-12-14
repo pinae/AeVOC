@@ -1,11 +1,13 @@
 #include <Arduino.h>
 #include <IotWebConf.h>
+#include "debugLogger.h"
 
 extern WebServer server;
 extern IotWebConf iotWebConf;
+extern DebugLogger logger;
 
 void handleRoot() {
-  //Serial.println("Request to /");
+  logger.printf("HTTP Request to /\n");
   // -- Let IotWebConf test and handle captive portal requests.
   if (iotWebConf.handleCaptivePortal())
   {

@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <IotWebConf.h>
+#include "debugLogger.h"
 #include "conversionHelpers.h"
 #include "configHelpers.h"
 #include "webHandlers.h"
@@ -28,6 +29,7 @@ IotWebConfParameter mqttUserPasswordParam = IotWebConfParameter(
 boolean needMqttConnect = false;
 boolean needReset = false;
 extern uint8_t matrixBrightness;
+extern DebugLogger logger;
 
 #endif
 
@@ -42,8 +44,8 @@ void DeviceName::print() {
     byte mac[6]; WiFi.macAddress(mac);
     char macStr[18];
     sprintf(&macStr[0], "%x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    /*Serial.printf("MAC:\t\t%s\n", macStr);
-    Serial.printf("Device Name:\t%s\n", deviceName);*/
+    logger.printf("MAC:\t\t%s\n", macStr);
+    logger.printf("Device Name:\t%s\n", deviceName);
 }
 
 char* DeviceName::get() {

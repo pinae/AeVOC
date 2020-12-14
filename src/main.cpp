@@ -9,6 +9,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <IotWebConf.h>
+#include "debugLogger.h"
 #include "i2cHelpers.h"
 #include "neopixelMatrix.h"
 #include "oledFunctions.h"
@@ -28,6 +29,7 @@
 #define OLED_RESET     0
 #define CONFIG_VERSION "v0.2"
 
+DebugLogger logger;
 SdsDustSensor sds(PM_SERIAL_RX, PM_SERIAL_TX);
 CCS811 ccs(CCS811_ADDR);
 DHT dht(D2, DHT22);
@@ -48,6 +50,7 @@ uint8_t matrixBrightness = 50;
 void setup() {
   Serial.begin(115200);
   while(!Serial) {}  // Wait for Serial to start
+  delay(750);
   devName.print();
   initWifiAP();
   Serial.println("Initializing i2c...");
@@ -151,6 +154,7 @@ void loop() {
   unsigned long now = millis();
   iotWebConf.doLoop();
   loopWifiChecks();
+  mqttLoop();
   if ((now - lastMeasurement) > 1000) {
     measure();
     if ((now - lastShift) > (3 * 60 * 1000)) {
@@ -165,4 +169,5 @@ void loop() {
     displayMatrix();
     lastMeasurement = now;
   }
+  logger.printAllWithSerial();
 }
