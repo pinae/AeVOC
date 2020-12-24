@@ -5,6 +5,8 @@ Sensor measuring particles and aerosoles down to PM2.5 and VOCs and warn if conc
 
 AeVOC is an combined air quality sensor which helps to monitor aerosole concentrations and smelly organic compounds. You can use it to give warning if the air quality degrgades and it gets time to open the windows.
 
+![Wire the components like this.](schematic/Verdrahtung-Fritzing.png)
+
 The sensor contains:
  * An SDS011 particle sensor, connected to a serial port. This sensor measures dust particles and aerosoles in the size categsries 10μm and 2,5μm. This measurement is the most important value to determine if the windows need to be opened. Aerosoles can contain viruses an bacteria and an infected person will exhale aerosoles with infections viruses, especially if speaking. If the values measured by the SDS011 rise it is time to exchange the air in the room.
  * An CCS811 VOC sensor, connected via i2c. This sensor detects volatile organic compounds which tend to be smelly and can be a health hazard in itself in very high concentrations. As VOCs are mostly emitted by humans the measured level help to detect degrading air quality and the need for fresh air.
