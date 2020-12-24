@@ -13,9 +13,12 @@ The sensor contains:
  * The 0.96" OLED is connected via i2c. It displays all the measurements, a warning summary and for each measurement a small diagram.
  * A matrix of 8x8 WS2812-RGB-LEDs displays the most crucial measurements as a color coded diagram.
  
-There are plans for a nice case made of wood. The document (viewable in the browser) contains technical drawings and the whole CAD design: [https://cad.onshape.com/documents/d1397a8c60d8cf10bc632b52/w/d572a7dd96a755f54efafc1b/e/793fdbc24d1e0b242f0b46c7]
-There is also a step-by-step guide in german at Make Projects: [https://makeprojects.com/de/project/aevoc]
-Watch the build on YouTube: [https://youtu.be/r93HGVTbWig]
+There are plans for a nice case made of wood. The document (viewable in the browser) contains technical drawings and the whole CAD design: https://cad.onshape.com/documents/d1397a8c60d8cf10bc632b52/w/d572a7dd96a755f54efafc1b/e/793fdbc24d1e0b242f0b46c7
+
+There is also a step-by-step guide in german at Make Projects: https://makeprojects.com/de/project/aevoc
+
+Watch the build on YouTube: https://youtu.be/r93HGVTbWig
+
 A comprehensive description in german is published in c't 03/21.
 
 ## Interpreting the LEDs
