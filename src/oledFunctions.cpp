@@ -43,12 +43,13 @@ void displayMeasurements(float pm25, float pm10,
   drawBarDiagram(54, humidity, HUMIDITY_MINIMUM, HUMIDITY_EXTREME);
   display.setTextSize(2);
   display.setCursor(0, 0);
-  String topText = "Alles OK.";
-  if (co2 > 1000) topText = "CO2: zzz..";
-  if (co2 > 1500) topText = "Zuviel CO2";
-  if (humidity > 67) topText = "Schimmel!";
-  if (voc > 550) topText = "Gestank!";
-  if (pm25 > 6.0f || pm10 > 15.0f) topText = "Aerosole!";
+  char topText[12];
+  sprintf(&topText[0], "Alles OK.");
+  if (co2 > 1000) sprintf(&topText[0], "CO2: zzz..");
+  if (co2 > 1500) sprintf(&topText[0], "Zuviel CO2");
+  if (humidity > 67) sprintf(&topText[0], "Schimmel!");
+  if (voc > 550) sprintf(&topText[0], "Gestank!");
+  if (pm25 > 6.0f || pm10 > 15.0f) sprintf(&topText[0], "Aerosole!");
   display.println(topText);
   display.display();
 }

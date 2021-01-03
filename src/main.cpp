@@ -167,6 +167,7 @@ void loop() {
     displayMeasurements(pm25, pm10, co2, voc, temperature, humidity);
     leds.setBrightness(matrixBrightness);
     displayMatrix();
+    Serial.printf("Free Heap: %u\n", ESP.getFreeHeap());
     lastMeasurement = now;
   }
   logger.printAllWithSerial();

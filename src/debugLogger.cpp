@@ -21,9 +21,14 @@ char* DebugLoggerListItem::getContent() {
     return content;
 }
 
-void DebugLogger::lockList() {
-    while (locked) { delay(1); }
+DebugLogger::DebugLogger() {
+    locked = false;
+}
+
+bool DebugLogger::lockList() {
+    if (locked) return false;
     locked = true;
+    return true;
 }
 
 void DebugLogger::unlockList() {
@@ -32,7 +37,9 @@ void DebugLogger::unlockList() {
 
 void DebugLogger::print(char* str) {
     DebugLoggerListItem* newItem = new DebugLoggerListItem(str);
-    lockList();
+    if (!lockList()) { // If unable to acquire the log the message gets discarded.
+        return;
+    }
     DebugLoggerListItem* i = list;
     if (!i) { list = newItem; }
     else {
@@ -52,6 +59,7 @@ char* DebugLogger::resizeBuffer(char* str) {
 }
 
 void DebugLogger::printf(const char* format, ...) {
+    if (ESP.getFreeHeap() < MIN_FREE_HEAP) return;
     char* str = getBuffer();
     va_list argptr;
     va_start(argptr, format);
@@ -62,7 +70,12 @@ void DebugLogger::printf(const char* format, ...) {
 }
 
 void DebugLogger::printAllWithSerial() {
-    lockList();
+    noInterrupts();
+    if (!lockList()) {
+        Serial.print("Logger is currently being filled. ");
+        Serial.println("Printing will resume in the next iteration.");
+        return;
+    }
     DebugLoggerListItem* i = list;
     while (i) {
         Serial.print(i->getContent());
@@ -73,4 +86,5 @@ void DebugLogger::printAllWithSerial() {
     }
     list = NULL;
     unlockList();
+    interrupts();
 }

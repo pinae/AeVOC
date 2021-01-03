@@ -1,6 +1,7 @@
 #ifndef DEBUG_LOGGER_CLASS
 #define DEBUG_LOGGER_CLASS
 #define MAX_DEBUG_STR_LEN 256
+#define MIN_FREE_HEAP 10000
 
 class DebugLoggerListItem {
     public:
@@ -16,6 +17,7 @@ class DebugLoggerListItem {
 
 class DebugLogger {
     public:
+        DebugLogger();
         char* getBuffer();
         char* resizeBuffer(char* str);
         void print(char* str);
@@ -25,7 +27,7 @@ class DebugLogger {
     private:
         bool locked = false;
         DebugLoggerListItem* list = NULL;
-        void lockList();
+        bool lockList();
         void unlockList();
 };
 

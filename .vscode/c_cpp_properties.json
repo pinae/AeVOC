@@ -1,14 +1,15 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
 {
     "configurations": [
         {
-            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags"
-        },
-        {
-            "name": "Linux",
+            "name": "PlatformIO",
             "includePath": [
                 "/home/pina/Code/PM2.5-CO2-Watcher/include",
                 "/home/pina/Code/PM2.5-CO2-Watcher/src",
-                "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/PubSubClient/src",
                 "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/IotWebConf/src",
                 "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266mDNS/src",
                 "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/EEPROM",
@@ -16,6 +17,7 @@
                 "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WebServer/src",
                 "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",
                 "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",
+                "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/PubSubClient/src",
                 "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/Adafruit SSD1306",
                 "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/Adafruit GFX Library",
                 "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/Adafruit BusIO",
@@ -68,7 +70,6 @@
                 "path": [
                     "/home/pina/Code/PM2.5-CO2-Watcher/include",
                     "/home/pina/Code/PM2.5-CO2-Watcher/src",
-                    "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/PubSubClient/src",
                     "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/IotWebConf/src",
                     "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266mDNS/src",
                     "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/EEPROM",
@@ -76,6 +77,7 @@
                     "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WebServer/src",
                     "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",
                     "/home/pina/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",
+                    "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/PubSubClient/src",
                     "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/Adafruit SSD1306",
                     "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/Adafruit GFX Library",
                     "/home/pina/Code/PM2.5-CO2-Watcher/.pio/libdeps/nodemcuv2/Adafruit BusIO",
@@ -125,7 +127,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=50003",
+                "PLATFORMIO=50004",
                 "ESP8266",
                 "ARDUINO_ARCH_ESP8266",
                 "ARDUINO_ESP8266_NODEMCU",
@@ -144,7 +146,6 @@
                 "__PLATFORMIO_BUILD_DEBUG__",
                 ""
             ],
-            "intelliSenseMode": "gcc-x64",
             "cStandard": "c99",
             "cppStandard": "c++11",
             "compilerPath": "/home/pina/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-gcc",
