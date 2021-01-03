@@ -27,7 +27,7 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET     0
-#define CONFIG_VERSION "v0.2"
+#define CONFIG_VERSION "v0.2.1"
 
 DebugLogger logger;
 SdsDustSensor sds(PM_SERIAL_RX, PM_SERIAL_TX);
@@ -100,14 +100,12 @@ void measure() {
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println(F("Failed to read from DHT sensor!"));
   } else {
-    char* temperatureStr = (char*) malloc(50);
-    sprintf(temperatureStr, "%2.1f", temperature);
-    publishToMqtt("temperature", temperatureStr);
-    free(temperatureStr);
-    char* humidityStr = (char*) malloc(50);
-    sprintf(humidityStr, "%2.1f", humidity);
-    publishToMqtt("humidity", humidityStr);
-    free(humidityStr);
+    char temperatureStr[50];
+    sprintf(&temperatureStr[0], "%2.1f", temperature);
+    publishToMqtt("temperature", &temperatureStr[0]);
+    char humidityStr[50];
+    sprintf(&humidityStr[0], "%2.1f", humidity);
+    publishToMqtt("humidity", &humidityStr[0]);
   }
   float hic = dht.computeHeatIndex(temperature, humidity, false);
   Serial.printf("Temperature: %2.1f°C  Humidity: %2.1f%%  Heat index: %2.1f°C\n", 
@@ -124,10 +122,9 @@ void measure() {
     addPmMeasurement(maxOf(
       normValue((float) pm25, PM25_MINIMUM, PM25_EXTREME), 
       normValue((float) pm10, PM10_MINIMUM, PM10_EXTREME)));
-    char* pmJson = (char*) malloc(80);
-    sprintf(pmJson, "{\"pm2,5\": %2.2f, \"pm10\": %2.2f}", pm25, pm10);
-    publishToMqtt("particles_and_aerosoles", pmJson);
-    free(pmJson);
+    char pmJson[80];
+    sprintf(&pmJson[0], "{\"pm2,5\": %2.2f, \"pm10\": %2.2f}", pm25, pm10);
+    publishToMqtt("particles_and_aerosoles", &pmJson[0]);
   } else {
     Serial.print("Could not read values from sensor, reason: ");
     Serial.println(pm.statusToString());
@@ -143,10 +140,9 @@ void measure() {
       voc = newVoc;
       addVocMeasurement(normValue((float) voc, VOC_MINIMUM, VOC_EXTREME));
     }
-    char* vocJson = (char*) malloc(80);
-    sprintf(vocJson, "{\"tVOC\": %u, \"CO2\": %u}", newVoc, newCo2);
-    publishToMqtt("voc", vocJson);
-    free(vocJson);
+    char vocJson[80];
+    sprintf(&vocJson[0], "{\"tVOC\": %u, \"CO2\": %u}", newVoc, newCo2);
+    publishToMqtt("voc", &vocJson[0]);
   }
 }
 
@@ -154,7 +150,6 @@ void loop() {
   unsigned long now = millis();
   iotWebConf.doLoop();
   loopWifiChecks();
-  mqttLoop();
   if ((now - lastMeasurement) > 1000) {
     measure();
     if ((now - lastShift) > (3 * 60 * 1000)) {

@@ -12,27 +12,57 @@ extern DeviceName devName;
 extern DebugLogger logger;
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
-subscribedMqttTopicList* subscribedTopicsList;
+SubscribedMqttTopicList* subscribedTopicsList = NULL;
 void (*savedSubscriptionCallback)();
 bool setupDone = false;
+extern bool wifiIsConnected;
 
 #endif
 
+SubscribedMqttTopic::SubscribedMqttTopic(
+        char* fullTopicStr, 
+        void (*callbackFunction)(char*)) {
+    topic = fullTopicStr;
+    callback = callbackFunction;
+}
+
+SubscribedMqttTopicList::SubscribedMqttTopicList(
+        SubscribedMqttTopic* newTopic, 
+        SubscribedMqttTopicList* nextElement) {
+    entry = newTopic;
+    next = nextElement;
+}
+
+char* SubscribedMqttTopic::getTopic() {
+    return topic;
+}
+
+char* SubscribedMqttTopicList::getTopic() {
+    return entry->getTopic();
+}
+
+SubscribedMqttTopic* SubscribedMqttTopicList::getEntry() {
+    return entry;
+}
+
+SubscribedMqttTopicList* SubscribedMqttTopicList::getNext() {
+    return next;
+}
 
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     char* plStr = (char*) calloc(length+1, sizeof(char));
-    strncpy(&plStr[0], (char*) payload, length);
+    strncpy(plStr, (char*) payload, length);
     *(plStr + length) = 0;
     logger.printf("MQTT: %s (len: %d) - Payload: %s\n", 
                   topic, length, plStr);
-    subscribedMqttTopicList* stl = subscribedTopicsList;
+    SubscribedMqttTopicList* stl = subscribedTopicsList;
     while(stl != NULL) {
-        if (strcmp(stl->entry->topic, topic) == 0) {
-            logger.printf("Found topic: %s\n", stl->entry->topic);
-            stl->entry->callback(plStr);
+        if (strcmp(stl->getTopic(), topic) == 0) {
+            logger.printf("Found topic: %s\n", stl->getTopic());
+            stl->getEntry()->callback(plStr);
             break;
         }
-        stl = (*stl).next;
+        stl = stl->getNext();
     }
     logger.printf("-----------------\n");
     free(plStr);
@@ -50,14 +80,12 @@ char* createFullTopicStr(const char* topic) {
 }
 
 void subscribeToTopic(const char* topic, void (*callback)(char*)) {
+    if (!wifiIsConnected || !mqttClient.connected()) return;
     char* fullTopicStr = createFullTopicStr(topic);
     mqttClient.subscribe(fullTopicStr);
-    subscribedMqttTopic* newTopic = (subscribedMqttTopic*) malloc(sizeof(subscribedMqttTopic));
-    newTopic->topic = fullTopicStr;
-    newTopic->callback = callback;
-    subscribedMqttTopicList* newTopicListElem = (subscribedMqttTopicList*) malloc(sizeof(subscribedMqttTopicList));
-    newTopicListElem->entry = newTopic;
-    newTopicListElem->next = subscribedTopicsList;
+    SubscribedMqttTopic* newTopic = new SubscribedMqttTopic(fullTopicStr, callback);
+    SubscribedMqttTopicList* newTopicListElem = new SubscribedMqttTopicList(
+        newTopic, subscribedTopicsList);
     subscribedTopicsList = newTopicListElem;
     logger.printf("Subscribed to MQTT-topic: %s\n", fullTopicStr);
 }
@@ -65,43 +93,57 @@ void subscribeToTopic(const char* topic, void (*callback)(char*)) {
 void connectToMqtt(void (*subscriptionCallback)()) {
     boolean successfullyConnected = false;
     while (!mqttClient.connected()) {
+        //Serial.printf("Attempting MQTT connection... ");
         logger.printf("Attempting MQTT connection... ");
         if (strlen(getMqttUsername()) > 0 && strlen(getMqttPassword())) {
+            //Serial.printf("\nMQTT: Using credentials: %s PW: %s\n", 
+            //              getMqttUsername(), getMqttPassword());
             logger.printf("\nMQTT: Using credentials: %s PW: %s\n", 
                           getMqttUsername(), getMqttPassword());
             successfullyConnected = mqttClient.connect(
                 devName.get(), getMqttUsername(), getMqttPassword());
         } else {
+            //Serial.printf("Connecting without credentials. Name: %s\n", devName.get());
             successfullyConnected = mqttClient.connect(devName.get());
         }
         if (successfullyConnected) {
+            //Serial.printf("connected!\n");
             logger.printf("connected!\n");
             subscriptionCallback();
         } else {
-            logger.printf("failed, rc=%d \ntry again in 2 seconds.\n", mqttClient.state());
-            // Wait 2 seconds before retrying
-            delay(2000);
+            //Serial.printf("failed, rc=%d \ntry again in 1 second.\n", mqttClient.state());
+            logger.printf("failed, rc=%d \ntry again in 1 second.\n", mqttClient.state());
+            // Wait at least 1 second before retrying
+            iotWebConfDelay(999);
+            return;
         }
     }
 }
 
 void mqttSetup(void (*subscriptionCallback)()) {
     savedSubscriptionCallback = subscriptionCallback;
-    mqttClient.setServer(getMqttServer(), getMqttPort());
-    mqttClient.setCallback(onMqttMessage);
-    connectToMqtt(subscriptionCallback);
-    setupDone = true;
+    if (!setupDone) {
+        Serial.printf("mqttSetup: %s:%lu\n", getMqttServer(), getMqttPort());
+        mqttClient.setServer(getMqttServer(), getMqttPort());
+        mqttClient.setCallback(onMqttMessage);
+        setupDone = true;
+    }
 }
 
 void publishToMqtt(const char* topic, char* payload) {
+    if (!wifiIsConnected || !mqttClient.connected()) return;
     char* fullTopicStr = createFullTopicStr(topic);
     mqttClient.publish(fullTopicStr, payload);
     free(fullTopicStr);
 }
 
+bool mqttConnected() {
+    return mqttClient.connected();
+}
+
 void mqttLoop() {
     if (!setupDone) return;
-    if (!mqttClient.connected()) {
+    if (wifiIsConnected && !mqttClient.connected()) {
         connectToMqtt(savedSubscriptionCallback);
     }
     mqttClient.loop();
