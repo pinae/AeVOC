@@ -8,8 +8,8 @@ class DeviceName {
         char* get();
 
     private:
-        char deviceName[23] = {'A', 'E', 'V', 'O', 'C', '-', 
-                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        char deviceName[24] = {'A', 'E', 'V', 'O', 'C', '-', 
+                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 };
 
 #endif
