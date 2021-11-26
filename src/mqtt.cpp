@@ -73,7 +73,7 @@ char* createFullTopicStr(const char* topic) {
     unsigned int topicLen = strlen(deviceName)+1+strlen(topic);
     char* fullTopicStr = (char*) calloc(topicLen+1, sizeof(char));
     strncpy(fullTopicStr, deviceName, strlen(deviceName));
-    strncpy(fullTopicStr+strlen(deviceName), "/", 1);
+    strncpy(fullTopicStr+strlen(deviceName), "/", 2);
     strncpy(fullTopicStr+strlen(deviceName)+1, topic, strlen(topic));
     *(fullTopicStr + topicLen+1) = '\0';
     return fullTopicStr;
