@@ -9,6 +9,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <IotWebConf.h>
+#include <IotWebConfUsing.h>
 #include "debugLogger.h"
 #include "i2cHelpers.h"
 #include "neopixelMatrix.h"
