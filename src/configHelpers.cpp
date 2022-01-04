@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <IotWebConf.h>
+#include <IotWebConfUsing.h>
 #include "debugLogger.h"
 #include "conversionHelpers.h"
 #include "configHelpers.h"
@@ -18,13 +19,15 @@ char mqttUserPasswordValue[STRING_LEN];
 extern WebServer server;
 HTTPUpdateServer httpUpdater;
 extern IotWebConf iotWebConf;
-IotWebConfParameter mqttServerParam = IotWebConfParameter(
+iotwebconf::ParameterGroup mqttgroup = iotwebconf::ParameterGroup(
+    "mqttgroup", "");
+iotwebconf::TextParameter mqttServerParam = iotwebconf::TextParameter(
     "MQTT server", "mqttServer", mqttServerValue, STRING_LEN);
-IotWebConfParameter mqttPortParam = IotWebConfParameter(
+iotwebconf::NumberParameter mqttPortParam = iotwebconf::NumberParameter(
     "MQTT port", "mqttPort", mqttPortValue, 6, "text", "1883", "1883");
-IotWebConfParameter mqttUserNameParam = IotWebConfParameter(
+iotwebconf::TextParameter mqttUserNameParam = iotwebconf::TextParameter(
     "MQTT user", "mqttUser", mqttUserNameValue, STRING_LEN);
-IotWebConfParameter mqttUserPasswordParam = IotWebConfParameter(
+iotwebconf::PasswordParameter mqttUserPasswordParam = iotwebconf::PasswordParameter(
     "MQTT password", "mqttPass", mqttUserPasswordValue, STRING_LEN, "password");
 bool needReset = false;
 bool wifiIsConnected = false;
@@ -63,10 +66,11 @@ void configSaved() {
 
 void initWifiAP() {
     //Serial.println("Initializing WiFi...");
-    iotWebConf.addParameter(&mqttServerParam);
-    iotWebConf.addParameter(&mqttPortParam);
-    iotWebConf.addParameter(&mqttUserNameParam);
-    iotWebConf.addParameter(&mqttUserPasswordParam);
+    mqttgroup.addItem(&mqttServerParam);
+    mqttgroup.addItem(&mqttPortParam);
+    mqttgroup.addItem(&mqttUserNameParam);
+    mqttgroup.addItem(&mqttUserPasswordParam);
+    iotWebConf.addParameterGroup(&mqttgroup);
     iotWebConf.setConfigSavedCallback(&configSaved);
     iotWebConf.setWifiConnectionCallback(&wifiConnected);
     iotWebConf.setupUpdateServer(&httpUpdater);
