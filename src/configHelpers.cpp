@@ -7,6 +7,12 @@
 #include "configHelpers.h"
 #include "webHandlers.h"
 #include "mqtt.h"
+// Include Update server
+#ifdef ESP8266
+ # include "ESP8266HTTPUpdateServer.h"
+#elif defined(ESP32)
+ # include <IotWebConfESP32HTTPUpdateServer.h>
+#endif
 
 #ifndef CONFIG_GLOBALS
 #define CONFIG_GLOBALS
@@ -17,7 +23,14 @@ char mqttPortValue[6] = {'1', '8', '8', '3', '\0', '\0'};
 char mqttUserNameValue[STRING_LEN];
 char mqttUserPasswordValue[STRING_LEN];
 extern WebServer server;
+
+// Create Update Server
+#ifdef ESP8266
+ESP8266HTTPUpdateServer httpUpdater;
+#elif defined(ESP32)
 HTTPUpdateServer httpUpdater;
+#endif
+
 extern IotWebConf iotWebConf;
 iotwebconf::ParameterGroup mqttgroup = iotwebconf::ParameterGroup(
     "mqttgroup", "");
@@ -73,7 +86,9 @@ void initWifiAP() {
     iotWebConf.addParameterGroup(&mqttgroup);
     iotWebConf.setConfigSavedCallback(&configSaved);
     iotWebConf.setWifiConnectionCallback(&wifiConnected);
-    iotWebConf.setupUpdateServer(&httpUpdater);
+    iotWebConf.setupUpdateServer(
+      [](const char* updatePath) { httpUpdater.setup(&server, updatePath); },
+      [](const char* userName, char* password) { httpUpdater.updateCredentials(userName, password); });
     boolean validConfig = iotWebConf.init();
     if (!validConfig) {
         mqttServerValue[0] = '\0';
