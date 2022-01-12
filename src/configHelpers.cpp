@@ -1,11 +1,18 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <IotWebConf.h>
+#include <IotWebConfUsing.h>
 #include "debugLogger.h"
 #include "conversionHelpers.h"
 #include "configHelpers.h"
 #include "webHandlers.h"
 #include "mqtt.h"
+// Include Update server
+#ifdef ESP8266
+ # include "ESP8266HTTPUpdateServer.h"
+#elif defined(ESP32)
+ # include <IotWebConfESP32HTTPUpdateServer.h>
+#endif
 
 #ifndef CONFIG_GLOBALS
 #define CONFIG_GLOBALS
@@ -16,15 +23,24 @@ char mqttPortValue[6] = {'1', '8', '8', '3', '\0', '\0'};
 char mqttUserNameValue[STRING_LEN];
 char mqttUserPasswordValue[STRING_LEN];
 extern WebServer server;
+
+// Create Update Server
+#ifdef ESP8266
+ESP8266HTTPUpdateServer httpUpdater;
+#elif defined(ESP32)
 HTTPUpdateServer httpUpdater;
+#endif
+
 extern IotWebConf iotWebConf;
-IotWebConfParameter mqttServerParam = IotWebConfParameter(
+iotwebconf::ParameterGroup mqttgroup = iotwebconf::ParameterGroup(
+    "mqttgroup", "");
+iotwebconf::TextParameter mqttServerParam = iotwebconf::TextParameter(
     "MQTT server", "mqttServer", mqttServerValue, STRING_LEN);
-IotWebConfParameter mqttPortParam = IotWebConfParameter(
+iotwebconf::NumberParameter mqttPortParam = iotwebconf::NumberParameter(
     "MQTT port", "mqttPort", mqttPortValue, 6, "text", "1883", "1883");
-IotWebConfParameter mqttUserNameParam = IotWebConfParameter(
+iotwebconf::TextParameter mqttUserNameParam = iotwebconf::TextParameter(
     "MQTT user", "mqttUser", mqttUserNameValue, STRING_LEN);
-IotWebConfParameter mqttUserPasswordParam = IotWebConfParameter(
+iotwebconf::PasswordParameter mqttUserPasswordParam = iotwebconf::PasswordParameter(
     "MQTT password", "mqttPass", mqttUserPasswordValue, STRING_LEN, "password");
 bool needReset = false;
 bool wifiIsConnected = false;
@@ -63,13 +79,16 @@ void configSaved() {
 
 void initWifiAP() {
     //Serial.println("Initializing WiFi...");
-    iotWebConf.addParameter(&mqttServerParam);
-    iotWebConf.addParameter(&mqttPortParam);
-    iotWebConf.addParameter(&mqttUserNameParam);
-    iotWebConf.addParameter(&mqttUserPasswordParam);
+    mqttgroup.addItem(&mqttServerParam);
+    mqttgroup.addItem(&mqttPortParam);
+    mqttgroup.addItem(&mqttUserNameParam);
+    mqttgroup.addItem(&mqttUserPasswordParam);
+    iotWebConf.addParameterGroup(&mqttgroup);
     iotWebConf.setConfigSavedCallback(&configSaved);
     iotWebConf.setWifiConnectionCallback(&wifiConnected);
-    iotWebConf.setupUpdateServer(&httpUpdater);
+    iotWebConf.setupUpdateServer(
+      [](const char* updatePath) { httpUpdater.setup(&server, updatePath); },
+      [](const char* userName, char* password) { httpUpdater.updateCredentials(userName, password); });
     boolean validConfig = iotWebConf.init();
     if (!validConfig) {
         mqttServerValue[0] = '\0';

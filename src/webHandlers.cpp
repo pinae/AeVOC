@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <IotWebConf.h>
+#include <IotWebConfUsing.h>
 #include "debugLogger.h"
 
 extern WebServer server;
