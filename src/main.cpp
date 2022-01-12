@@ -28,7 +28,7 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET     0
-#define CONFIG_VERSION "v0.2.1"
+#define CONFIG_VERSION "v0.2.2"
 
 DebugLogger logger;
 SdsDustSensor sds(PM_SERIAL_RX, PM_SERIAL_TX);
